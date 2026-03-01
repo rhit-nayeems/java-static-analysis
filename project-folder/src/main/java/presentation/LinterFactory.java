@@ -8,6 +8,7 @@ import domain.BooleanFlagMethodLinter;
 import domain.DecoratorPatternLinter;
 import domain.DesignRiskLinter;
 import domain.FacadePatternLinter;
+import domain.LeastKnowledgePrincipleLinter;
 import domain.Linter;
 import domain.LinterConfig;
 import domain.PlantUMLGenerator;
@@ -25,20 +26,17 @@ public class LinterFactory {
     public List<Linter> createLinters(LinterConfig config) {
         List<Linter> linters = new ArrayList<>();
 
-        // Create data layer dependencies (shared across linters if needed)
         datastorage.ASMReader asmReader = new datastorage.ASMReader();
-
-        // Create domain layer utilities
         domain.LCOMCalculator lcomCalculator = new domain.LCOMCalculator();
 
-        // Add linters with dependency injection and config-driven thresholds
         addIfEnabled(linters, new SnakeLinter(), SnakeLinter.class, config);
+        addIfEnabled(linters, new LeastKnowledgePrincipleLinter(), LeastKnowledgePrincipleLinter.class, config);
         addIfEnabled(linters, new TrailingWhitespaceLinter(), TrailingWhitespaceLinter.class, config);
         addIfEnabled(linters, new PublicNonFinalFieldLinter(asmReader), PublicNonFinalFieldLinter.class, config);
         addIfEnabled(linters, new SRPLinter(config.getSrpLcomThreshold(), asmReader, lcomCalculator), SRPLinter.class,
                 config);
         addIfEnabled(linters, new FacadePatternLinter(asmReader), FacadePatternLinter.class, config);
-        addIfEnabled(linters, new StrategyPatternLinter(), StrategyPatternLinter.class, config);
+        addIfEnabled(linters, new StrategyPatternLinter(asmReader), StrategyPatternLinter.class, config);
         addIfEnabled(linters, new SingletonPatternLinter(asmReader), SingletonPatternLinter.class, config);
         addIfEnabled(linters, new DecoratorPatternLinter(asmReader), DecoratorPatternLinter.class, config);
         addIfEnabled(linters, new AdapterPatternLinter(asmReader), AdapterPatternLinter.class, config);

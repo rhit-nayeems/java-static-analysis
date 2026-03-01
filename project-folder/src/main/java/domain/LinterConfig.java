@@ -30,6 +30,10 @@ public class LinterConfig {
         return enabledLinters.contains(normalize(linterType.getSimpleName()));
     }
 
+    public boolean isAllLintersEnabled() {
+        return enabledLinters == null;
+    }
+
     public int getTooManyParametersLimit() {
         return tooManyParametersLimit;
     }

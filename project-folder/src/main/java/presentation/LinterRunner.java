@@ -10,6 +10,7 @@ import domain.BooleanFlagMethodLinter;
 import domain.DecoratorPatternLinter;
 import domain.DesignRiskLinter;
 import domain.FacadePatternLinter;
+import domain.LeastKnowledgePrincipleLinter;
 import domain.Linter;
 import domain.PlantUMLGenerator;
 import domain.PublicNonFinalFieldLinter;
@@ -37,6 +38,7 @@ public class LinterRunner {
             DesignRiskLinter.class);
     private static final List<Class<? extends Linter>> NON_CLASS_FILE_LINTER_TYPES = List.of(
             SnakeLinter.class,
+            LeastKnowledgePrincipleLinter.class,
             UnusedImportLinter.class,
             TrailingWhitespaceLinter.class);
 
@@ -46,6 +48,36 @@ public class LinterRunner {
         splitFilesByType(files, classFiles, nonClassFiles);
 
         return runLintBatches(classFiles, nonClassFiles, availableLinters);
+    }
+
+    public static boolean isClassFileLinter(Linter linter) {
+        return linter != null && isClassFileLinterType(linter.getClass());
+    }
+
+    public static boolean isClassFileLinterType(Class<? extends Linter> linterType) {
+        return matchesAnyType(linterType, CLASS_FILE_LINTER_TYPES);
+    }
+
+    public static boolean isNonClassFileLinter(Linter linter) {
+        return linter != null && isNonClassFileLinterType(linter.getClass());
+    }
+
+    public static boolean isNonClassFileLinterType(Class<? extends Linter> linterType) {
+        return matchesAnyType(linterType, NON_CLASS_FILE_LINTER_TYPES);
+    }
+
+    private static boolean matchesAnyType(Class<? extends Linter> linterType,
+            List<Class<? extends Linter>> acceptedTypes) {
+        if (linterType == null) {
+            return false;
+        }
+
+        for (Class<? extends Linter> acceptedType : acceptedTypes) {
+            if (acceptedType.isAssignableFrom(linterType)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void splitFilesByType(List<File> files, List<File> classFiles, List<File> nonClassFiles) {

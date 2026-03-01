@@ -30,7 +30,24 @@ public class LinterMain {
     }
 
     public static void main(String[] args) {
+        if (isGuiMode(args)) {
+            LinterGuiMain.launch();
+            return;
+        }
         new LinterMain().run();
+    }
+
+    private static boolean isGuiMode(String[] args) {
+        if (args == null) {
+            return false;
+        }
+
+        for (String arg : args) {
+            if ("--gui".equalsIgnoreCase(arg) || "-g".equalsIgnoreCase(arg)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void run() {
@@ -40,6 +57,7 @@ public class LinterMain {
         System.out.println("=== Base Linter (Terminal) ===");
         System.out.println("Built-in linter #1 checks for trailing whitespace.");
         System.out.println("Config file: " + DEFAULT_CONFIG_PATH);
+        System.out.println("Tip: pass --gui to launch desktop mode.");
 
         String fileInput = askForFileInput();
         List<File> files = fileLoader.loadFiles(fileInput);
