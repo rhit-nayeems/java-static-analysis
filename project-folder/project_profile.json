@@ -1,0 +1,388 @@
+{
+  "schema_version": "1.0",
+  "generated_on": "2026-03-04",
+  "project_identity": {
+    "name": "LinterProject",
+    "artifact": "rhit.csse.csse374:LinterProject:1.0-rc3",
+    "repository_type": "Java Maven project",
+    "primary_goal": "Analyze Java code for style issues, principle violations, and design-pattern candidates using both source and bytecode analysis."
+  },
+  "summary": {
+    "one_line": "A modular Java linter with CLI + Swing GUI, configurable rules, and ASM-powered bytecode pattern detection.",
+    "why_it_matters": [
+      "Demonstrates practical static-analysis architecture beyond simple regex linting.",
+      "Combines source-level checks with bytecode-level structural analysis.",
+      "Supports configuration-driven behavior and multiple user interfaces (CLI + GUI)."
+    ]
+  },
+  "tech_stack": {
+    "language": "Java",
+    "java_version": "11",
+    "build_tool": "Maven",
+    "libraries": [
+      {
+        "name": "ASM",
+        "modules": ["asm", "asm-tree", "asm-analysis"],
+        "version": "9.9",
+        "purpose": "Bytecode parsing and structural analysis of compiled .class files"
+      },
+      {
+        "name": "JUnit Jupiter",
+        "modules": ["junit-jupiter-engine", "junit-jupiter-params"],
+        "version": "5.8.2",
+        "purpose": "Automated testing"
+      }
+    ],
+    "ui": "Java Swing",
+    "packaging": "jar + jar-with-dependencies"
+  },
+  "build_and_run": {
+    "requirements": [
+      "JDK 11+",
+      "Maven 3+"
+    ],
+    "commands": {
+      "build": "mvn clean package",
+      "test": "mvn test",
+      "run_cli": "java -jar target/LinterProject-1.0-rc3-jar-with-dependencies.jar",
+      "run_gui": "java -jar target/LinterProject-1.0-rc3-jar-with-dependencies.jar --gui"
+    },
+    "artifacts": [
+      "target/LinterProject-1.0-rc3-jar-with-dependencies.jar",
+      "target/LinterProject-1.0-rc3.jar"
+    ]
+  },
+  "project_scale": {
+    "production_java_files": 50,
+    "test_java_files": 11,
+    "concrete_linter_classes": 15,
+    "test_classes": 9,
+    "current_test_status": "Passing (mvn test)"
+  },
+  "configuration": {
+    "file": "linter.properties",
+    "keys": [
+      {
+        "name": "enabled_linters",
+        "default": "all",
+        "type": "string",
+        "semantics": "Either 'all' or comma-separated linter class simple names"
+      },
+      {
+        "name": "too_many_parameters_limit",
+        "default": 5,
+        "type": "positive integer",
+        "semantics": "Threshold for TooManyParametersLinter"
+      },
+      {
+        "name": "srp_lcom_threshold",
+        "default": 2,
+        "type": "positive integer",
+        "semantics": "LCOM threshold for SRPLinter"
+      }
+    ],
+    "fallback_behavior": {
+      "missing_or_invalid_file": "Uses LinterConfig defaults",
+      "invalid_integer": "Uses key default",
+      "non_positive_integer": "Uses key default"
+    }
+  },
+  "architecture": {
+    "layers": [
+      {
+        "name": "presentation",
+        "responsibilities": [
+          "CLI and GUI entry points",
+          "Linter construction and orchestration",
+          "User interaction and output formatting"
+        ],
+        "key_classes": [
+          "presentation.LinterMain",
+          "presentation.LinterGuiMain",
+          "presentation.LinterGuiFrame",
+          "presentation.LinterFactory",
+          "presentation.LinterRunner"
+        ]
+      },
+      {
+        "name": "domain",
+        "responsibilities": [
+          "Linter contract and rule implementations",
+          "Configuration model",
+          "Cohesion metric calculations"
+        ],
+        "key_classes": [
+          "domain.Linter",
+          "domain.LinterConfig",
+          "domain.AbstractSourceLinter",
+          "domain.AbstractASMLinter",
+          "domain.LCOMCalculator"
+        ]
+      },
+      {
+        "name": "datastorage",
+        "responsibilities": [
+          "Config loading",
+          "File input expansion",
+          "ASM class loading"
+        ],
+        "key_classes": [
+          "datastorage.ConfigLoader",
+          "datastorage.FileLoader",
+          "datastorage.ASMReader"
+        ]
+      }
+    ],
+    "core_contract": {
+      "interface": "domain.Linter",
+      "method": "String lint(List<File> files)"
+    },
+    "design_patterns_used": [
+      "Template Method (AbstractSourceLinter, AbstractASMLinter)",
+      "Factory-style linter creation (LinterFactory)",
+      "Dependency Injection for shared services (ASMReader, LCOMCalculator)",
+      "Strategy-like selection by file type (LinterRunner type buckets)"
+    ]
+  },
+  "execution_flows": {
+    "cli": [
+      "Load config from linter.properties",
+      "Create enabled linter instances using factory",
+      "Prompt user for comma-separated paths",
+      "Expand and deduplicate files recursively",
+      "Split by file type (.class vs non-.class)",
+      "Run matching linter sets and aggregate output"
+    ],
+    "gui": [
+      "Load all registered linters into linter dropdown",
+      "Select one linter to run",
+      "Filter suggested file choices by selected linter input type",
+      "Edit/load/save config values in GUI panel",
+      "Run lint asynchronously (SwingWorker) and display result"
+    ]
+  },
+  "linters": [
+    {
+      "name": "SnakeLinter",
+      "input_type": ".java",
+      "analysis_mode": "source",
+      "category": "style",
+      "logic": "Regex-based checks for snake_case violations in class names, fields, and variables",
+      "config_keys": [],
+      "output": "filename:line with identifier violation"
+    },
+    {
+      "name": "LeastKnowledgePrincipleLinter",
+      "input_type": ".java",
+      "analysis_mode": "source",
+      "category": "design principle",
+      "logic": "Law of Demeter heuristics using chained-call/chained-access regex patterns, with comment/literal handling",
+      "config_keys": [],
+      "output": "file path + violating lines + total count"
+    },
+    {
+      "name": "TrailingWhitespaceLinter",
+      "input_type": "text files in non-class bucket",
+      "analysis_mode": "source",
+      "category": "formatting",
+      "logic": "Flags lines ending with space or tab",
+      "config_keys": [],
+      "output": "file path + list of lines + total count"
+    },
+    {
+      "name": "UnusedImportLinter",
+      "input_type": ".java",
+      "analysis_mode": "source",
+      "category": "hygiene",
+      "logic": "Collect explicit non-static imports, then detect missing token usage by simple-name regex",
+      "config_keys": [],
+      "output": "filename:line unused import"
+    },
+    {
+      "name": "PublicNonFinalFieldLinter",
+      "input_type": ".class",
+      "analysis_mode": "bytecode (ASM)",
+      "category": "encapsulation",
+      "logic": "Flags fields that are public and non-final",
+      "config_keys": [],
+      "output": "class + field issues + total"
+    },
+    {
+      "name": "SRPLinter",
+      "input_type": ".class",
+      "analysis_mode": "bytecode (ASM + LCOM)",
+      "category": "design principle",
+      "logic": "Calculates LCOM4; flags classes with LCOM >= threshold and reports disconnected method components",
+      "config_keys": ["srp_lcom_threshold"],
+      "output": "detailed SRP report with cohesion metrics and suggested component split"
+    },
+    {
+      "name": "FacadePatternLinter",
+      "input_type": ".class",
+      "analysis_mode": "bytecode (ASM)",
+      "category": "pattern detection",
+      "logic": "Detects candidates by delegated public methods and interactions with multiple internal subsystem classes",
+      "config_keys": [],
+      "output": "candidate class + delegation ratio + subsystem types"
+    },
+    {
+      "name": "StrategyPatternLinter",
+      "input_type": ".class",
+      "analysis_mode": "bytecode (ASM)",
+      "category": "pattern detection",
+      "logic": "Looks for interface calls with used non-void returns and evidence of multiple concrete strategy implementors",
+      "config_keys": [],
+      "output": "candidate class + interface + observed implementations"
+    },
+    {
+      "name": "SingletonPatternLinter",
+      "input_type": ".class",
+      "analysis_mode": "bytecode (ASM)",
+      "category": "pattern detection",
+      "logic": "Private constructors + static self-typed field + public static self-returning accessor loading that field",
+      "config_keys": [],
+      "output": "candidate class + singleton field"
+    },
+    {
+      "name": "DecoratorPatternLinter",
+      "input_type": ".class",
+      "analysis_mode": "bytecode (ASM)",
+      "category": "pattern detection",
+      "logic": "Type extends/implements a target type and stores same type in a field",
+      "config_keys": [],
+      "output": "candidate class + decorated type evidence"
+    },
+    {
+      "name": "AdapterPatternLinter",
+      "input_type": ".class",
+      "analysis_mode": "bytecode (ASM)",
+      "category": "pattern detection",
+      "logic": "Target type relationship + adaptee field + delegated method calls to adaptee owner",
+      "config_keys": [],
+      "output": "candidate class + target/adaptee/delegation evidence"
+    },
+    {
+      "name": "BooleanFlagMethodLinter",
+      "input_type": ".class",
+      "analysis_mode": "bytecode (ASM)",
+      "category": "design smell",
+      "logic": "Flags methods with boolean or Boolean parameters",
+      "config_keys": [],
+      "output": "class + method + count"
+    },
+    {
+      "name": "TooManyParametersLinter",
+      "input_type": ".class",
+      "analysis_mode": "bytecode (ASM)",
+      "category": "complexity",
+      "logic": "Flags methods/constructors where argument count exceeds configured limit",
+      "config_keys": ["too_many_parameters_limit"],
+      "output": "class + member parameter-count violations + total"
+    },
+    {
+      "name": "DesignRiskLinter",
+      "input_type": ".class",
+      "analysis_mode": "bytecode (ASM + LCOM)",
+      "category": "architecture risk scoring",
+      "logic": "Weighted score from class size, coupling, mutable static state, and low cohesion",
+      "config_keys": [],
+      "output": "class risk breakdown + total score + risk level"
+    },
+    {
+      "name": "PlantUMLGenerator",
+      "input_type": ".class",
+      "analysis_mode": "bytecode (ASM)",
+      "category": "model generation",
+      "logic": "Produces PlantUML class/interface definitions and relationships",
+      "config_keys": [],
+      "output": "@startuml ... @enduml text"
+    }
+  ],
+  "metric_engine": {
+    "name": "LCOMCalculator",
+    "metric": "LCOM4",
+    "approach": [
+      "Filter instance methods/fields",
+      "Build method->field access graph from bytecode instructions",
+      "Compute connected components via Union-Find",
+      "Use component count as cohesion score"
+    ],
+    "consumers": ["SRPLinter", "DesignRiskLinter"]
+  },
+  "testing": {
+    "framework": "JUnit 5",
+    "harness": "Dynamic compilation of temporary Java fixtures into .class files",
+    "testsupport": "testsupport.JavaClassFixtureCompiler",
+    "covered_areas": [
+      "ConfigLoader behavior",
+      "Adapter pattern detection",
+      "Facade pattern detection",
+      "Strategy pattern detection",
+      "Singleton pattern detection",
+      "Boolean flag detection",
+      "TooManyParameters threshold handling",
+      "Least Knowledge / Law of Demeter detection"
+    ],
+    "gaps_by_name_match": [
+      "DecoratorPatternLinter",
+      "DesignRiskLinter",
+      "PublicNonFinalFieldLinter",
+      "SnakeLinter",
+      "SRPLinter",
+      "TrailingWhitespaceLinter",
+      "UnusedImportLinter"
+    ],
+    "notable_repo_detail": "LeastKnowledgePrincipleLinterTest appears in two packages (domain and test)."
+  },
+  "gui_capabilities": {
+    "entrypoint": "presentation.LinterGuiMain",
+    "features": [
+      "Select linter to run",
+      "Filter compatible file suggestions by linter input type",
+      "Manual browse for files/folders",
+      "Load/save linter.properties",
+      "Edit enabled_linters and thresholds",
+      "Async lint run with status timing",
+      "Result pane with active settings summary"
+    ],
+    "ux_notes": [
+      "Linter dropdown is intentionally populated with all registered linters.",
+      "Input path selection determines actual analysis scope for each run."
+    ]
+  },
+  "strengths": [
+    "Hybrid analysis (source + bytecode) in one tool",
+    "Modular rule architecture with single linter interface",
+    "Configurable thresholds and rule enablement",
+    "Both terminal and desktop GUI workflows",
+    "Runnable fat-jar packaging for easy demos",
+    "Automated tests with dynamic fixture generation"
+  ],
+  "limitations_and_tradeoffs": [
+    "Some rules are heuristic and may produce false positives/negatives",
+    "Not all implemented linters have direct dedicated tests yet",
+    "Some output formatting has encoding artifacts in certain rule messages",
+    "No CI workflow files currently present"
+  ],
+  "portfolio_positioning": {
+    "problem_statement": "Build a practical Java linter to detect design issues and anti-patterns for grading and code-review scenarios.",
+    "engineering_highlights": [
+      "Bytecode-level structural analysis with ASM",
+      "Cohesion metric implementation (LCOM4) with Union-Find",
+      "Rule registration and dependency wiring via factory",
+      "Dual-interface delivery (CLI + GUI)",
+      "Config-driven behavior with robust defaults"
+    ],
+    "keywords": [
+      "static analysis",
+      "Java tooling",
+      "ASM",
+      "design patterns",
+      "SOLID",
+      "code quality",
+      "Maven",
+      "Swing",
+      "JUnit"
+    ]
+  }
+}
